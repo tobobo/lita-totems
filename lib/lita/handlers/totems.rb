@@ -29,13 +29,13 @@ module Lita
         queues = queue_by_name(queue_name) if queue_name
         queues = all_queues if queues.nil? || queues.empty?
 
-        queues.each do |name, item_list|
-          output << "*** #{name.upcase} ***"
-          if item_list.empty?
+        queues.each do |queue|
+          output << "*** #{queue[:name].upcase} ***"
+          if queue[:items].empty?
             output << "(empty)"
           else
-            item_list.each_with_index do |item, index|
-              output << "#{index + 1}. #{item[:user].name} (#{time_waited(item[:joined_at])})"
+            queue[:items].each_with_index do |item, index|
+              output << "#{index + 1}. #{item[:user].name} - Joined #{queued_at}"
             end
           end
         end
@@ -46,27 +46,26 @@ module Lita
       private
 
       def all_queues
-        queue_names.map do |queue_name|
-          [queue_name, items_for(queue_name)]
+        queue_names.map do |name|
+          { name: name, items: items_for(name) }
         end
       end
 
-      def items_for(queue_name)
-        redis.hgetall("queues:#{queue_name}").map do |user_id, joined_at|
-          { user: User.find_by_id(user_id), joined_at: time_since(joined_at) }
+      def items_for(name)
+        redis.zrange("queues:#{name}", 0, -1, with_scores: true).map do |item|
+          { user: User.find_by_id(item[0]), queued_at: item[1].to_i }
         end
       end
 
-      def queue_by_name(queue_name)
-        if redis.sismember("queues", queue_name)
-          [[queue_name, items_for(queue_name)]]
-        end
+      def queue_by_name(name)
+        queues = all_queues.find { |queue| queue[:name] == name.to_s.downcase }
+        queues = [queues] unless queues.is_a?(Array)
+        queues
       end
 
       def queue_names
-        @all_queue_names ||= redis.smembers("queues")
+        redis.smembers("queues")
       end
-
     end
   end
 end

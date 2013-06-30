@@ -25,9 +25,6 @@ REPLY
     end
 
     it "lists only the requested queue when called with a valid queue name" do
-      allow_any_instance_of(described_class).to receive(
-        :queue_by_name
-      ).with("foo").and_return([["foo", []]])
       expect_reply <<-REPLY.chomp
 *** FOO ***
 (empty)
