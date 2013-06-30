@@ -65,7 +65,11 @@ module Lita
       end
 
       def entry(number, item)
-        "#{number}. #{item[:user].name} (waiting since TIME)"
+        "#{number}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
+      end
+
+      def waiting_since(time_joined)
+        "(waiting since #{Time.at(time_joined)})"
       end
 
       def items_for(name)

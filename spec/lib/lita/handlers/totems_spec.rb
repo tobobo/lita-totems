@@ -66,11 +66,13 @@ REPLY
     end
 
     it "shows the user in subsequent calls to #list" do
+      time = Time.now
+      allow(Time).to receive(:now).and_return(time)
       send_command("totems add foo")
       send_command("totems foo")
       expect(replies.last).to eq <<-REPLY.chomp
 *** FOO ***
-1. Test User (waiting since TIME)
+1. Test User (waiting since #{time})
 REPLY
     end
   end
