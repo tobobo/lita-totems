@@ -21,13 +21,8 @@ module Lita
       end
 
       def list(matches)
-        queue_name = args[0]
-        return if queue_name && ["add", "yield", "kick"].include?(queue_name)
-
+        queues = determine_queues(args[0])
         output = []
-
-        queues = queue_by_name(queue_name) if queue_name
-        queues = all_queues if queues.nil? || queues.empty?
 
         queues.each do |queue|
           output << "*** #{queue[:name].upcase} ***"
@@ -51,6 +46,16 @@ module Lita
         end
       end
 
+      def determine_queues(queue_name)
+        if queue_name && respond_to?(queue_name.downcase.to_s)
+          []
+        elsif queue_name
+          queue_by_name(queue_name) || all_queues
+        else
+          all_queues
+        end
+      end
+
       def items_for(name)
         redis.zrange("queues:#{name}", 0, -1, with_scores: true).map do |item|
           { user: User.find_by_id(item[0]), queued_at: item[1].to_i }
@@ -59,14 +64,8 @@ module Lita
 
       def queue_by_name(name)
         queues = all_queues.find { |queue| queue[:name] == name.to_s.downcase }
-        case queues
-        when Array
-          queues
-        when nil
-          []
-        else
-          [queues]
-        end
+        queues = [queues] unless queues.nil? || queues === Array
+        queues
       end
 
       def queue_names
