@@ -75,5 +75,11 @@ REPLY
 1. Test User (waiting since #{time})
 REPLY
     end
+
+    it "tells the user if they're already queued" do
+      send_command("totems add foo")
+      send_command("totems add foo")
+      expect(replies.last).to include("already queued")
+    end
   end
 end

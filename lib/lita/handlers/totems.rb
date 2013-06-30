@@ -23,9 +23,10 @@ HELP
 
         if queue_name.empty?
           reply "Format: #{robot.mention_name} totems add TOTEM_NAME"
-        else
-          redis.zadd("queues:#{queue_name}", Time.now.to_i, user.id)
+        elsif redis.zadd("queues:#{queue_name}", Time.now.to_i, user.id)
           reply "#{user.name} has been added to the queue for #{queue_name.upcase}."
+        else
+          reply "#{user.name} is already queued for #{queue_name.upcase}."
         end
       end
 
