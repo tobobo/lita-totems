@@ -3,10 +3,20 @@ require "lita"
 module Lita
   module Handlers
     class Totems < Handler
-      route(/^totems\s+add/, to: :add, command: true)
-      route(/^totems\s+yield/, to: :yield, command: true)
-      route(/^totems\s+kick/, to: :kick, command: true)
-      route(/^totems/, to: :list, command: true)
+      route(/^totems\s+add/, to: :add, command: true, help: {
+        "totems add TOTEM" => "Add yourself to the queue for the TOTEM."
+      })
+      route(/^totems\s+yield/, to: :yield, command: true, help: {
+        "totems yield TOTEM" => "Yield TOTEM to the next user in the queue."
+      })
+      route(/^totems\s+kick/, to: :kick, command: true, help: {
+        "totems kick TOTEM [USER]" => <<-HELP.chomp
+Forcefully remove either USER or the first user from the queue for TOTEM.
+HELP
+      })
+      route(/^totems/, to: :list, command: true, help: {
+        "totems [TOTEM]" => "List the queues for all totems, or only TOTEM."
+      })
 
       def add(matches)
         queue_name = (args[1] || "").to_s.downcase
