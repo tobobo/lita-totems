@@ -33,7 +33,17 @@ HELP
       end
 
       def yield(matches)
+        queue_name = (args[1] || "").to_s.downcase
 
+        if queue_name.empty?
+          reply "Format: #{robot.mention_name} totems yield TOTEM_NAME"
+        elsif !queue_names.include?(queue_name)
+          reply "There is no totem named #{queue_name.upcase}."
+        elsif redis.zrem("queues:#{queue_name}", user.id)
+          reply "#{user.name} has yielded #{queue_name.upcase}."
+        else
+          reply "#{user.name} is not queued for #{queue_name.upcase}."
+        end
       end
 
       def kick(matches)

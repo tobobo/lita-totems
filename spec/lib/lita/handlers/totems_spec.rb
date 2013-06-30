@@ -87,4 +87,38 @@ REPLY
       expect(replies.last).to include("no totem named INVALID")
     end
   end
+
+  describe "#yield" do
+    before do
+      allow(Lita::User).to receive(:find_by_id).with("1").and_return(user)
+      send_command("totems add foo")
+    end
+
+    it "replies with a message saying the user has yielded" do
+      send_command("totems yield foo")
+      expect(replies.last).to eq("#{user.name} has yielded FOO.")
+    end
+
+    it "replies with the required format if a queue name is missing" do
+      send_command("totems yield")
+      expect(replies.last).to match(/^Format:/)
+    end
+
+    it "doesn't show the user in subsequent calls to #list" do
+      send_command("totems yield foo")
+      send_command("totems foo")
+      expect(replies.last).not_to include(user.name)
+    end
+
+    it "tells the user if they're not in the queue" do
+      send_command("totems yield foo")
+      send_command("totems yield foo")
+      expect(replies.last).to include("not queued")
+    end
+
+    it "tells the user if they try to yield an invalid queue" do
+      send_command("totems yield invalid")
+      expect(replies.last).to include("no totem named INVALID")
+    end
+  end
 end
