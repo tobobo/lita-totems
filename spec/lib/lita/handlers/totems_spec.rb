@@ -31,5 +31,15 @@ REPLY
 REPLY
       send_test_message("#{robot.mention_name}: totems foo")
     end
+
+    it "lists all queues if the requested queue is not valid" do
+      expect_reply <<-REPLY.chomp
+*** FOO ***
+(empty)
+*** BAR ***
+(empty)
+REPLY
+      send_test_message("#{robot.mention_name}: totems invalid")
+    end
   end
 end

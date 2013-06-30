@@ -59,8 +59,14 @@ module Lita
 
       def queue_by_name(name)
         queues = all_queues.find { |queue| queue[:name] == name.to_s.downcase }
-        queues = [queues] unless queues.is_a?(Array)
-        queues
+        case queues
+        when Array
+          queues
+        when nil
+          []
+        else
+          [queues]
+        end
       end
 
       def queue_names
