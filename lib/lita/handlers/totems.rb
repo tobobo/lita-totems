@@ -9,7 +9,14 @@ module Lita
       route(/^totems/, to: :list, command: true)
 
       def add(matches)
+        queue_name = (args[1] || "").to_s.downcase
 
+        if queue_name.empty?
+          reply "Format: #{robot.mention_name} totems add TOTEM_NAME"
+        else
+          redis.zadd("queues:#{queue_name}", Time.now.to_i, user.id)
+          reply "#{user.name} has been added to the queue for #{queue_name.upcase}."
+        end
       end
 
       def yield(matches)
@@ -31,7 +38,7 @@ module Lita
             output << "(empty)"
           else
             queue[:items].each_with_index do |item, index|
-              output << "#{index + 1}. #{item[:user].name} - Joined #{queued_at}"
+              output << entry(index + 1, item)
             end
           end
         end
@@ -57,9 +64,13 @@ module Lita
         end
       end
 
+      def entry(number, item)
+        "#{number}. #{item[:user].name} (waiting since TIME)"
+      end
+
       def items_for(name)
         redis.zrange("queues:#{name}", 0, -1, with_scores: true).map do |item|
-          { user: User.find_by_id(item[0]), queued_at: item[1].to_i }
+          { user: User.find_by_id(item[0]), waiting_since: item[1].to_i }
         end
       end
 

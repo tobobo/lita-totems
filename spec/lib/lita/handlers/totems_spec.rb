@@ -7,13 +7,13 @@ describe Lita::Handlers::Totems, lita: true do
   it { routes_command("totems foo").to(:list) }
   it { routes_command("totems").to(:list) }
 
-  describe "#list" do
-    before do
-      allow_any_instance_of(described_class).to receive(
-        :queue_names
-      ).and_return(["foo", "bar"])
-    end
+  before do
+    allow_any_instance_of(described_class).to receive(
+      :queue_names
+    ).and_return(["foo", "bar"])
+  end
 
+  describe "#list" do
     it "lists all queues when called without arguments" do
       send_command("totems")
       expect(replies.last).to eq <<-REPLY.chomp
@@ -45,6 +45,33 @@ REPLY
     it "doesn't respond if the requested queue is the same as a subcommand" do
       send_command("totems add")
       replies.each { |reply| expect(reply).not_to include("*** FOO ***")}
+    end
+  end
+
+  describe "#add" do
+    before do
+      allow(Lita::User).to receive(:find_by_id).with("1").and_return(user)
+    end
+
+    it "replies with a message saying the user was added" do
+      send_command("totems add foo")
+      expect(replies.last).to eq(
+        "#{user.name} has been added to the queue for FOO."
+      )
+    end
+
+    it "replies with the required format if a queue name is missing" do
+      send_command("totems add")
+      expect(replies.last).to match(/^Format:/)
+    end
+
+    it "shows the user in subsequent calls to #list" do
+      send_command("totems add foo")
+      send_command("totems foo")
+      expect(replies.last).to eq <<-REPLY.chomp
+*** FOO ***
+1. Test User (waiting since TIME)
+REPLY
     end
   end
 end
