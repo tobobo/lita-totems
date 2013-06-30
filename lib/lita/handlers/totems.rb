@@ -19,30 +19,26 @@ HELP
       })
 
       def add(matches)
-        queue_name = (args[1] || "").to_s.downcase
+        return unless valid?(
+          "Format: #{robot.mention_name} totems add TOTEM_NAME"
+        )
 
-        if queue_name.empty?
-          reply "Format: #{robot.mention_name} totems add TOTEM_NAME"
-        elsif !queue_names.include?(queue_name)
-          reply "There is no totem named #{queue_name.upcase}."
-        elsif redis.zadd("queues:#{queue_name}", Time.now.to_i, user.id)
-          reply "#{user.name} has been added to the queue for #{queue_name.upcase}."
+        if redis.zadd("queues:#{@queue_name}", Time.now.to_i, user.id)
+          reply "#{user.name} has been added to the queue for #{@queue_name.upcase}."
         else
-          reply "#{user.name} is already queued for #{queue_name.upcase}."
+          reply "#{user.name} is already queued for #{@queue_name.upcase}."
         end
       end
 
       def yield(matches)
-        queue_name = (args[1] || "").to_s.downcase
+        return unless valid?(
+          "Format: #{robot.mention_name} totems yield TOTEM_NAME"
+        )
 
-        if queue_name.empty?
-          reply "Format: #{robot.mention_name} totems yield TOTEM_NAME"
-        elsif !queue_names.include?(queue_name)
-          reply "There is no totem named #{queue_name.upcase}."
-        elsif redis.zrem("queues:#{queue_name}", user.id)
-          reply "#{user.name} has yielded #{queue_name.upcase}."
+        if redis.zrem("queues:#{@queue_name}", user.id)
+          reply "#{user.name} has yielded #{@queue_name.upcase}."
         else
-          reply "#{user.name} is not queued for #{queue_name.upcase}."
+          reply "#{user.name} is not queued for #{@queue_name.upcase}."
         end
       end
 
@@ -109,6 +105,20 @@ HELP
 
       def queue_names
         redis.smembers("queues")
+      end
+
+      def valid?(format)
+        @queue_name = (args[1] || "").to_s.downcase
+
+        if @queue_name.empty?
+          reply format
+          false
+        elsif !queue_names.include?(@queue_name)
+          reply "There is no totem named #{@queue_name.upcase}."
+          false
+        else
+          true
+        end
       end
     end
   end
