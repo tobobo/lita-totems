@@ -22,6 +22,7 @@ module Lita
 
       def list(matches)
         queues = determine_queues(args[0])
+        return unless queues
         output = []
 
         queues.each do |queue|
@@ -48,7 +49,7 @@ module Lita
 
       def determine_queues(queue_name)
         if queue_name && respond_to?(queue_name.downcase.to_s)
-          []
+          nil
         elsif queue_name
           queue_by_name(queue_name) || all_queues
         else
