@@ -81,5 +81,10 @@ REPLY
       send_command("totems add foo")
       expect(replies.last).to include("already queued")
     end
+
+    it "tells the user if they try to queue for an invalid queue" do
+      send_command("totems add invalid")
+      expect(replies.last).to include("no totem named INVALID")
+    end
   end
 end
