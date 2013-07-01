@@ -102,6 +102,20 @@ REPLY
         reply output.join("\n")
       end
 
+      def create(matches)
+        validate_format(
+          "Format: #{robot.mention_name} totems create TOTEM_NAME",
+          false
+        )
+
+        if redis.sadd("queues", @queue_name)
+          reply "Created totem #{@queue_name.upcase}."
+        else
+          reply "Totem #{@queue_name.upcase} already exists."
+        end
+      rescue InvalidInvocation
+      end
+
       private
 
       def all_queues
@@ -159,13 +173,13 @@ REPLY
         items.find { |item| item[:user].name == user.name }
       end
 
-      def validate_format(format)
+      def validate_format(format, totem_must_exist = true)
         @queue_name = (args[1] || "").to_s.downcase
 
         if @queue_name.empty?
           reply format
           raise InvalidInvocation
-        elsif !queue_names.include?(@queue_name)
+        elsif totem_must_exist && !queue_names.include?(@queue_name)
           reply "There is no totem named #{@queue_name.upcase}."
           raise InvalidInvocation
         end

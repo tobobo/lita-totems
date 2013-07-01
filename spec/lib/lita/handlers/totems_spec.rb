@@ -10,38 +10,28 @@ describe Lita::Handlers::Totems, lita: true do
   it { routes_command("totems").to(:list) }
 
   before do
-    allow_any_instance_of(described_class).to receive(
-      :queue_names
-    ).and_return(["foo", "bar"])
+    Lita.config.robot.admins = user.id
+    Lita::Authorization.add_user_to_group(user, user, "totem_admins")
+    send_command("totems create foo")
+    send_command("totems create bar")
   end
 
   describe "#list" do
     it "lists all queues when called without arguments" do
       send_command("totems")
-      expect(replies.last).to eq <<-REPLY.chomp
-*** FOO ***
-(empty)
-*** BAR ***
-(empty)
-REPLY
+      expect(replies.last).to include("*** FOO ***\n(empty)")
+      expect(replies.last).to include("*** BAR ***\n(empty)")
     end
 
     it "lists only the requested queue when called with a valid queue name" do
       send_command("totems foo")
-      expect(replies.last).to eq <<-REPLY.chomp
-*** FOO ***
-(empty)
-REPLY
+      expect(replies.last).to include("*** FOO ***\n(empty)")
     end
 
     it "lists all queues if the requested queue doesn't exist" do
       send_command("totems invalid")
-      expect(replies.last).to eq <<-REPLY.chomp
-*** FOO ***
-(empty)
-*** BAR ***
-(empty)
-REPLY
+      expect(replies.last).to include("*** FOO ***\n(empty)")
+      expect(replies.last).to include("*** BAR ***\n(empty)")
     end
 
     it "doesn't respond if the requested queue is the same as a subcommand" do
@@ -159,6 +149,25 @@ REPLY
       expect(replies.last).to include("#{target_user.name} was kicked")
       send_command("totems foo")
       expect(replies.last).not_to include(target_user.name)
+    end
+  end
+
+  describe "#create" do
+    it "requires a totem name" do
+      send_command("totems create")
+      expect(replies.last).to match(/^Format:/)
+    end
+
+    it "creates a totem" do
+      send_command("totems create baz")
+      expect(replies.last).to include("Created totem")
+      send_command("totems baz")
+      expect(replies.last).to include("BAZ")
+    end
+
+    it "tells the user if the totem already existed" do
+      send_command("totems create foo")
+      expect(replies.last).to include("already exists")
     end
   end
 end
