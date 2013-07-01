@@ -3,6 +3,8 @@ require "lita"
 module Lita
   module Handlers
     class Totems < Handler
+      class InvalidInvocation < StandardError; end
+
       route(/^totems\s+add/, to: :add, command: true, help: {
         "totems add TOTEM" => "Add yourself to the queue for the TOTEM."
       })
@@ -19,41 +21,37 @@ HELP
       })
 
       def add(matches)
-        return unless valid?(
-          "Format: #{robot.mention_name} totems add TOTEM_NAME"
-        )
+        validate_format("Format: #{robot.mention_name} totems add TOTEM_NAME")
 
         if redis.zadd("queues:#{@queue_name}", Time.now.to_i, user.id)
-          reply "#{user.name} has been added to the queue for #{@queue_name.upcase}."
+          reply <<-REPLY.chomp
+#{user.name} has been added to the queue for #{@queue_name.upcase}.
+REPLY
         else
           reply "#{user.name} is already queued for #{@queue_name.upcase}."
         end
+      rescue InvalidInvocation
       end
 
       def yield(matches)
-        return unless valid?(
-          "Format: #{robot.mention_name} totems yield TOTEM_NAME"
-        )
+        validate_format("Format: #{robot.mention_name} totems yield TOTEM_NAME")
 
         if redis.zrem("queues:#{@queue_name}", user.id)
           reply "#{user.name} has yielded #{@queue_name.upcase}."
         else
           reply "#{user.name} is not queued for #{@queue_name.upcase}."
         end
+      rescue InvalidInvocation
       end
 
       def kick(matches)
-        return unless valid?(
+        validate_format(
           "Format: #{robot.mention_name} totems kick TOTEM_NAME [USER]"
         )
 
-        items = queue_by_name(@queue_name).first[:items]
-        target_user_name = args[2]
+        items = get_queue_items(@queue_name)
 
-        if items.empty?
-          reply "#{@queue_name.upcase} is already empty."
-          return
-        end
+        target_user_name = args[2]
 
         if target_user_name
           user = User.find_by_name(target_user_name)
@@ -68,6 +66,7 @@ HELP
 
         redis.zrem("queues:#{@queue_name}", user.id)
         reply "#{user.name} was kicked from #{@queue_name.upcase}."
+      rescue InvalidInvocation
       end
 
       def list(matches)
@@ -111,6 +110,17 @@ HELP
         "#{number}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
       end
 
+      def get_queue_items(queue_name)
+        items = queue_by_name(queue_name).first[:items]
+
+        if items.empty?
+          reply "#{@queue_name.upcase} is already empty."
+          raise InvalidInvocation
+        end
+
+        items
+      end
+
       def waiting_since(time_joined)
         "(waiting since #{Time.at(time_joined)})"
       end
@@ -135,17 +145,15 @@ HELP
         items.find { |item| item[:user].name == user.name }
       end
 
-      def valid?(format)
+      def validate_format(format)
         @queue_name = (args[1] || "").to_s.downcase
 
         if @queue_name.empty?
           reply format
-          false
+          raise InvalidInvocation
         elsif !queue_names.include?(@queue_name)
           reply "There is no totem named #{@queue_name.upcase}."
-          false
-        else
-          true
+          raise InvalidInvocation
         end
       end
     end
