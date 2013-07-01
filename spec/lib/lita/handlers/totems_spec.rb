@@ -49,10 +49,6 @@ REPLY
   end
 
   describe "#add" do
-    before do
-      allow(Lita::User).to receive(:find_by_id).with("1").and_return(user)
-    end
-
     it "replies with a message saying the user was added" do
       send_command("totems add foo")
       expect(replies.last).to eq(
@@ -90,7 +86,6 @@ REPLY
 
   describe "#yield" do
     before do
-      allow(Lita::User).to receive(:find_by_id).with("1").and_return(user)
       send_command("totems add foo")
     end
 
@@ -119,6 +114,49 @@ REPLY
     it "tells the user if they try to yield an invalid queue" do
       send_command("totems yield invalid")
       expect(replies.last).to include("no totem named INVALID")
+    end
+  end
+
+  describe "#kick" do
+    let(:another_user) { Lita::User.create(2, name: "Another User") }
+    let(:target_user) { Lita::User.create(3, name: "Target User") }
+
+    it "replies with the required format if a queue name is missing" do
+      send_command("totems kick")
+      expect(replies.last).to match(/^Format:/)
+    end
+
+    it "replies with a warning if the queue name is invalid" do
+      send_command("totems kick invalid")
+      expect(replies.last).to include("no totem named INVALID")
+    end
+
+    it "replies with a warning if there is no one in the queue" do
+      send_command("totems kick foo")
+      expect(replies.last).to include("already empty")
+    end
+
+    it "kicks the first user if no user is specified" do
+      send_command("totems add foo", as: target_user)
+      send_command("totems kick foo")
+      expect(replies.last).to include("#{target_user.name} was kicked")
+      send_command("totems foo")
+      expect(replies.last).not_to include(target_user.name)
+    end
+
+    it "replies with a warning if the target user is not in the queue" do
+      send_command("totems add foo", as: target_user)
+      send_command("totems kick foo 'missing user'")
+      expect(replies.last).to include("not queued")
+    end
+
+    it "kicks the target user" do
+      send_command("totems add foo", as: another_user)
+      send_command("totems add foo", as: target_user)
+      send_command("totems kick foo '#{target_user.name}'")
+      expect(replies.last).to include("#{target_user.name} was kicked")
+      send_command("totems foo")
+      expect(replies.last).not_to include(target_user.name)
     end
   end
 end

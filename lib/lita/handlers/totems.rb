@@ -43,7 +43,31 @@ HELP
       end
 
       def kick(matches)
+        return unless valid?(
+          "Format: #{robot.mention_name} totems kick TOTEM_NAME [USER]"
+        )
 
+        items = queue_by_name(@queue_name).first[:items]
+        target_user_name = args[2]
+
+        if items.empty?
+          reply "#{@queue_name.upcase} is already empty."
+          return
+        end
+
+        if target_user_name
+          user = User.find_by_name(target_user_name)
+
+          unless user && user_in_queue?(user, items)
+            reply "#{target_user_name} is not queued for #{@queue_name.upcase}."
+            return
+          end
+        else
+          user = items.first[:user]
+        end
+
+        redis.zrem("queues:#{@queue_name}", user.id)
+        reply "#{user.name} was kicked from #{@queue_name.upcase}."
       end
 
       def list(matches)
@@ -105,6 +129,10 @@ HELP
 
       def queue_names
         redis.smembers("queues")
+      end
+
+      def user_in_queue?(user, items)
+        items.find { |item| item[:user].name == user.name }
       end
 
       def valid?(format)
