@@ -170,4 +170,23 @@ REPLY
       expect(replies.last).to include("already exists")
     end
   end
+
+  describe "#destroy" do
+    it "requires a totem name" do
+      send_command("totems destroy")
+      expect(replies.last).to match(/^Format:/)
+    end
+
+    it "replies with a warning if the queue name is invalid" do
+      send_command("totems destroy invalid")
+      expect(replies.last).to include("no totem named INVALID")
+    end
+
+    it "destroys a totem" do
+      send_command("totems destroy foo")
+      expect(replies.last).to include("Destroyed totem")
+      send_command("totems")
+      expect(replies.last).not_to include("FOO")
+    end
+  end
 end

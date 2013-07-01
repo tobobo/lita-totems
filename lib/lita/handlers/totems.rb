@@ -116,6 +116,16 @@ REPLY
       rescue InvalidInvocation
       end
 
+      def destroy(matches)
+        validate_format(
+          "Format: #{robot.mention_name} totems destroy TOTEM_NAME"
+        )
+
+        redis.srem("queues", @queue_name)
+        reply "Destroyed totem #{@queue_name.upcase}."
+      rescue InvalidInvocation
+      end
+
       private
 
       def all_queues
