@@ -16,6 +16,20 @@ module Lita
 Forcefully remove either USER or the first user from the queue for TOTEM.
 HELP
       })
+      route(
+        /^totems\s+create/,
+        to: :create,
+        command: true,
+        restrict_to: :totem_admins,
+        help: { "totems create TOTEM" => "Create a new totem called TOTEM." }
+      )
+      route(
+        /^totems\s+destroy/,
+        to: :destroy,
+        command: true,
+        restrict_to: :totem_admins,
+        help: { "totems destroy TOTEM" => "Destroy the TOTEM totem." }
+      )
       route(/^totems/, to: :list, command: true, help: {
         "totems [TOTEM]" => "List the queues for all totems, or only TOTEM."
       })

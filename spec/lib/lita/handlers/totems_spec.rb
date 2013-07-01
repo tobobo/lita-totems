@@ -5,6 +5,8 @@ describe Lita::Handlers::Totems, lita: true do
   it { routes_command("totems yield").to(:yield) }
   it { routes_command("totems kick").to(:kick) }
   it { routes_command("totems foo").to(:list) }
+  it { routes_command("totems create").to(:create) }
+  it { routes_command("totems destroy").to(:destroy) }
   it { routes_command("totems").to(:list) }
 
   before do
