@@ -1,4 +1,5 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-# Specify your gem's dependencies in lita-totems.gemspec
 gemspec
+
+gem "lita", github: "jimmycuadra/lita"
