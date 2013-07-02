@@ -9,6 +9,8 @@ describe Lita::Handlers::Totems, lita: true do
   it { routes_command("totems destroy").to(:destroy) }
   it { routes_command("totems").to(:list) }
 
+  let(:another_user) { Lita::User.create(2, name: "Another User") }
+
   before do
     Lita.config.robot.admins = user.id
     Lita::Authorization.add_user_to_group(user, user, "totem_admins")
@@ -120,10 +122,23 @@ REPLY
       send_command("totems yield invalid")
       expect(replies.last).to include("no totem named INVALID")
     end
+
+    it "notifies the next user in the queue" do
+      send_command("totems add foo", as: another_user)
+      expect_any_instance_of(described_class).to receive(:notify).with(
+        another_user,
+        /now in possession/
+      )
+      send_command("totems yield foo")
+    end
+
+    it "does not notify anyone if no one is waiting" do
+      expect_any_instance_of(described_class).not_to receive(:notify)
+      send_command("totems yield foo")
+    end
   end
 
   describe "#kick" do
-    let(:another_user) { Lita::User.create(2, name: "Another User") }
     let(:target_user) { Lita::User.create(3, name: "Target User") }
 
     it "replies with the required format if a queue name is missing" do

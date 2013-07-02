@@ -53,6 +53,8 @@ REPLY
 
         if @totem.yield(user)
           reply "#{user.name} has yielded #{@totem}."
+          holder = @totem.holder
+          notify(holder, "You are now in possession of #{@totem}.") if holder
         else
           reply "#{user.name} is not queued for #{@totem}."
         end
@@ -144,6 +146,9 @@ REPLY
         end
 
         totems
+      end
+
+      def notify(target, message)
       end
 
       def validate_format(format, totem_must_exist = true)

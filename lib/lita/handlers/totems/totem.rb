@@ -48,13 +48,17 @@ module Lita
           redis.srem("queues", name)
         end
 
+        def holder
+          queue.first.user unless queue.empty?
+        end
+
         def kick(user)
           if queue.empty?
             raise EmptyQueue
           elsif user && !in_queue?(user)
             raise UserNotQueued
           elsif !user
-            user = queue.first.user
+            user = holder
           end
 
           redis.zrem("queues:#{name}", user.id)
