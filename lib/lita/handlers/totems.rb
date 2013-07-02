@@ -1,4 +1,5 @@
 require "lita"
+require "lita/handlers/totems/totem"
 
 module Lita
   module Handlers
@@ -37,12 +38,12 @@ HELP
       def add(matches)
         validate_format("Format: #{robot.mention_name} totems add TOTEM_NAME")
 
-        if redis.zadd("queues:#{@queue_name}", Time.now.to_i, user.id)
+        if @totem.add(user)
           reply <<-REPLY.chomp
-#{user.name} has been added to the queue for #{@queue_name.upcase}.
+#{user.name} has been added to the queue for #{@totem}.
 REPLY
         else
-          reply "#{user.name} is already queued for #{@queue_name.upcase}."
+          reply "#{user.name} is already queued for #{@totem}."
         end
       rescue InvalidInvocation
       end
@@ -50,10 +51,10 @@ REPLY
       def yield(matches)
         validate_format("Format: #{robot.mention_name} totems yield TOTEM_NAME")
 
-        if redis.zrem("queues:#{@queue_name}", user.id)
-          reply "#{user.name} has yielded #{@queue_name.upcase}."
+        if @totem.yield(user)
+          reply "#{user.name} has yielded #{@totem}."
         else
-          reply "#{user.name} is not queued for #{@queue_name.upcase}."
+          reply "#{user.name} is not queued for #{@totem}."
         end
       rescue InvalidInvocation
       end
@@ -63,23 +64,18 @@ REPLY
           "Format: #{robot.mention_name} totems kick TOTEM_NAME [USER]"
         )
 
-        items = get_queue_items(@queue_name)
-
-        target_user_name = args[2]
-
-        if target_user_name
-          user = User.find_by_name(target_user_name)
-
-          unless user && user_in_queue?(user, items)
-            reply "#{target_user_name} is not queued for #{@queue_name.upcase}."
-            return
-          end
-        else
-          user = items.first[:user]
+        user_name = args[2]
+        user = user_name && User.find_by_name(user_name)
+        if user_name && !user
+          reply "There is no such user as #{user_name}"
+          return
         end
-
-        redis.zrem("queues:#{@queue_name}", user.id)
-        reply "#{user.name} was kicked from #{@queue_name.upcase}."
+        user = @totem.kick(user)
+        reply "#{user.name} was kicked from #{@totem}."
+      rescue Totem::EmptyQueue
+        reply "#{@totem} is already empty."
+      rescue Totem::UserNotQueued
+        reply "#{user.name} is not queued for #{@totem}."
       rescue InvalidInvocation
       end
 
@@ -108,10 +104,10 @@ REPLY
           false
         )
 
-        if redis.sadd("queues", @queue_name)
-          reply "Created totem #{@queue_name.upcase}."
+        if @totem.create
+          reply "Created totem #{@totem}."
         else
-          reply "Totem #{@queue_name.upcase} already exists."
+          reply "Totem #{@totem} already exists."
         end
       rescue InvalidInvocation
       end
@@ -121,8 +117,8 @@ REPLY
           "Format: #{robot.mention_name} totems destroy TOTEM_NAME"
         )
 
-        redis.srem("queues", @queue_name)
-        reply "Destroyed totem #{@queue_name.upcase}."
+        @totem.destroy
+        reply "Destroyed totem #{@totem}."
       rescue InvalidInvocation
       end
 
@@ -148,17 +144,6 @@ REPLY
         "#{number}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
       end
 
-      def get_queue_items(queue_name)
-        items = queue_by_name(queue_name).first[:items]
-
-        if items.empty?
-          reply "#{@queue_name.upcase} is already empty."
-          raise InvalidInvocation
-        end
-
-        items
-      end
-
       def waiting_since(time_joined)
         "(waiting since #{Time.at(time_joined)})"
       end
@@ -179,20 +164,16 @@ REPLY
         redis.smembers("queues")
       end
 
-      def user_in_queue?(user, items)
-        items.find { |item| item[:user].name == user.name }
-      end
-
       def validate_format(format, totem_must_exist = true)
-        @queue_name = (args[1] || "").to_s.downcase
+        @totem = Totem.new(redis, args[1])
 
-        if @queue_name.empty?
-          reply format
-          raise InvalidInvocation
-        elsif totem_must_exist && !queue_names.include?(@queue_name)
-          reply "There is no totem named #{@queue_name.upcase}."
+        if totem_must_exist && !@totem.persisted?
+          reply "There is no totem named #{@totem}."
           raise InvalidInvocation
         end
+      rescue Totem::TotemNameRequired
+        reply format
+        raise InvalidInvocation
       end
     end
   end

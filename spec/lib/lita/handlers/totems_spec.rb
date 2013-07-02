@@ -38,6 +38,12 @@ describe Lita::Handlers::Totems, lita: true do
       send_command("totems add")
       replies.each { |reply| expect(reply).not_to include("*** FOO ***")}
     end
+
+    it "lists waiting users in the queues" do
+      send_command("totems add foo")
+      send_command("totems foo")
+      expect(replies.last).to include(user.name)
+    end
   end
 
   describe "#add" do
@@ -137,9 +143,16 @@ REPLY
     end
 
     it "replies with a warning if the target user is not in the queue" do
+      another_user
+      send_command("totems add foo", as: target_user)
+      send_command("totems kick foo 'Another User'")
+      expect(replies.last).to include("not queued")
+    end
+
+    it "replies with a warning if no such user exists" do
       send_command("totems add foo", as: target_user)
       send_command("totems kick foo 'missing user'")
-      expect(replies.last).to include("not queued")
+      expect(replies.last).to include("no such user")
     end
 
     it "kicks the target user" do
