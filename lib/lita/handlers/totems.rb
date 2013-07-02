@@ -95,7 +95,11 @@ REPLY
           end
         end
 
-        reply output.join("\n")
+        if output.empty?
+          reply "There are no totems yet."
+        else
+          reply output.join("\n")
+        end
       end
 
       def create(matches)

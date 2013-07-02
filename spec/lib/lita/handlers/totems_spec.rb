@@ -44,6 +44,13 @@ describe Lita::Handlers::Totems, lita: true do
       send_command("totems foo")
       expect(replies.last).to include(user.name)
     end
+
+    it "tells the user if there are no totems yet" do
+      send_command("totems destroy foo")
+      send_command("totems destroy bar")
+      send_command("totems")
+      expect(replies.last).to include("no totems yet")
+    end
   end
 
   describe "#add" do
