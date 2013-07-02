@@ -189,6 +189,11 @@ REPLY
       send_command("totems create foo")
       expect(replies.last).to include("already exists")
     end
+
+    it "doesn't allow creation of a totem with the name of a subcommand" do
+      send_command("totems create add")
+      expect(replies.last).to include("with the name of a subcommand")
+    end
   end
 
   describe "#destroy" do

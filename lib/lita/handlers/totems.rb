@@ -108,6 +108,11 @@ REPLY
           false
         )
 
+        if respond_to?(@totem.name)
+          reply "Can't create a totem with the name of a subcommand."
+          return
+        end
+
         if @totem.create
           reply "Created totem #{@totem}."
         else
