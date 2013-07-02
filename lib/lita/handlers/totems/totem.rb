@@ -1,3 +1,5 @@
+require "lita/handlers/totems/queue_item"
+
 module Lita
   module Handlers
     class Totems < Handler
@@ -32,8 +34,8 @@ module Lita
         end
 
         def each
-          queue.each_with_index do |item, index|
-            yield item, index + 1
+          queue.each_with_index do |queue_item, index|
+            yield queue_item, index + 1
           end
         end
 
@@ -52,7 +54,7 @@ module Lita
           elsif user && !in_queue?(user)
             raise UserNotQueued
           elsif !user
-            user = queue.first[:user]
+            user = queue.first.user
           end
 
           redis.zrem("queues:#{name}", user.id)
@@ -74,12 +76,17 @@ module Lita
         private
 
         def in_queue?(user)
-          queue.find { |item| item[:user] == user }
+          queue.find { |queue_item| queue_item.user == user }
         end
 
         def queue
-          redis.zrange("queues:#{name}", 0, -1, with_scores: true).map do |item|
-            { user: User.find_by_id(item[0]), waiting_since: item[1].to_i }
+          redis.zrange(
+            "queues:#{name}",
+            0,
+            -1,
+            with_scores: true
+          ).each_with_index.map do |item, index|
+            QueueItem.new(item[0], item[1], index + 1)
           end
         end
       end

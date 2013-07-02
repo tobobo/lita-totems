@@ -89,8 +89,8 @@ REPLY
           if totem.empty?
             output << "(empty)"
           else
-            totem.each do |item, rank|
-              output << entry(rank, item)
+            totem.each do |queue_item|
+              output << queue_item.to_s
             end
           end
         end
@@ -135,14 +135,6 @@ REPLY
         end
 
         totems
-      end
-
-      def entry(rank, item)
-        "#{rank}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
-      end
-
-      def waiting_since(time_joined)
-        "(waiting since #{Time.at(time_joined)})"
       end
 
       def validate_format(format, totem_must_exist = true)
