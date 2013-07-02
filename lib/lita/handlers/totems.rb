@@ -80,17 +80,17 @@ REPLY
       end
 
       def list(matches)
-        queues = determine_queues(args[0])
-        return unless queues
+        totems = determine_totems(args[0])
+        return unless totems
         output = []
 
-        queues.each do |queue|
-          output << "*** #{queue[:name].upcase} ***"
-          if queue[:items].empty?
+        totems.each do |totem|
+          output << "*** #{totem} ***"
+          if totem.empty?
             output << "(empty)"
           else
-            queue[:items].each_with_index do |item, index|
-              output << entry(index + 1, item)
+            totem.each do |item, rank|
+              output << entry(rank, item)
             end
           end
         end
@@ -124,44 +124,25 @@ REPLY
 
       private
 
-      def all_queues
-        queue_names.map do |name|
-          { name: name, items: items_for(name) }
+      def determine_totems(totem_name)
+        return if respond_to?(totem_name.to_s.downcase.strip)
+
+        totems = Totem.all(redis)
+
+        if totem_name
+          filtered_totems = totems.select { |totem| totem.name == totem_name }
+          totems = filtered_totems unless filtered_totems.empty?
         end
+
+        totems
       end
 
-      def determine_queues(queue_name)
-        if queue_name && respond_to?(queue_name.downcase.to_s)
-          nil
-        elsif queue_name
-          queue_by_name(queue_name) || all_queues
-        else
-          all_queues
-        end
-      end
-
-      def entry(number, item)
-        "#{number}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
+      def entry(rank, item)
+        "#{rank}. #{item[:user].name} #{waiting_since(item[:waiting_since])}"
       end
 
       def waiting_since(time_joined)
         "(waiting since #{Time.at(time_joined)})"
-      end
-
-      def items_for(name)
-        redis.zrange("queues:#{name}", 0, -1, with_scores: true).map do |item|
-          { user: User.find_by_id(item[0]), waiting_since: item[1].to_i }
-        end
-      end
-
-      def queue_by_name(name)
-        queues = all_queues.find { |queue| queue[:name] == name.to_s.downcase }
-        queues = [queues] unless queues.nil? || queues === Array
-        queues
-      end
-
-      def queue_names
-        redis.smembers("queues")
       end
 
       def validate_format(format, totem_must_exist = true)

@@ -9,6 +9,14 @@ module Lita
         attr_reader :redis, :name
         private :redis
 
+        class << self
+          def all(redis)
+            redis.smembers("queues").map do |name|
+              new(redis, name)
+            end
+          end
+        end
+
         def initialize(redis, totem_name)
           @redis = redis
           @name = totem_name.to_s.downcase.strip
@@ -21,6 +29,16 @@ module Lita
 
         def create
           redis.sadd("queues", name)
+        end
+
+        def each
+          queue.each_with_index do |item, index|
+            yield item, index + 1
+          end
+        end
+
+        def empty?
+          queue.empty?
         end
 
         def destroy
