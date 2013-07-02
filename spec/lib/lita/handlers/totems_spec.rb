@@ -185,6 +185,39 @@ REPLY
       send_command("totems foo")
       expect(replies.last).not_to include(target_user.name)
     end
+
+    it "notifies the next user if the user kicked had the totem" do
+      allow_any_instance_of(described_class).to receive(:notify)
+      send_command("totems add foo", as: target_user)
+      send_command("totems add foo")
+      expect_any_instance_of(described_class).to receive(:notify).with(
+        user,
+        /now in possession/
+      )
+      send_command("totems kick foo")
+    end
+
+    it "doesn't notify the holder if the totem didn't change hands" do
+      allow_any_instance_of(described_class).to receive(:notify)
+      send_command("totems add foo", as: target_user)
+      send_command("totems add foo")
+      expect_any_instance_of(described_class).not_to receive(:notify).with(
+        target_user,
+        anything
+      )
+      send_command("totems kick foo '#{user.name}'")
+    end
+
+    it "notifies the kicked user that they were kicked" do
+      allow_any_instance_of(described_class).to receive(:notify)
+      send_command("totems add foo", as: target_user)
+      send_command("totems add foo")
+      expect_any_instance_of(described_class).to receive(:notify).with(
+        target_user,
+        /been kicked out/
+      )
+      send_command("totems kick foo")
+    end
   end
 
   describe "#create" do

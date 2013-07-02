@@ -84,7 +84,7 @@ module Lita
         end
 
         def queue
-          redis.zrange(
+          redis.zrevrange(
             "queues:#{name}",
             0,
             -1,

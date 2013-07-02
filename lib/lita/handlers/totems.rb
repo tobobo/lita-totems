@@ -67,13 +67,19 @@ REPLY
         )
 
         user_name = args[2]
-        user = user_name && User.find_by_name(user_name)
-        if user_name && !user
+        kick_user = user_name && User.find_by_name(user_name)
+        if user_name && !kick_user
           reply "There is no such user as #{user_name}"
           return
         end
-        user = @totem.kick(user)
-        reply "#{user.name} was kicked from #{@totem}."
+        initial_holder = @totem.holder
+        kick_user = @totem.kick(kick_user)
+        reply "#{kick_user.name} was kicked from the queue for #{@totem}."
+        notify(kick_user, "You've been kicked out of the queue for #{@totem}.")
+        holder = @totem.holder
+        if holder && holder != initial_holder
+          notify(holder, "You are now in possession of #{@totem}.")
+        end
       rescue Totem::EmptyQueue
         reply "#{@totem} is already empty."
       rescue Totem::UserNotQueued
