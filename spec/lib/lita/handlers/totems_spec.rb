@@ -54,6 +54,19 @@ describe Lita::Handlers::Totems, lita: true do
       send_command("totems")
       expect(replies.last).to include("no totems yet")
     end
+
+    it "shows the time the holder has held the totem" do
+      send_command("totems add foo")
+      send_command("totems foo")
+      expect(replies.last).to include("held for")
+    end
+
+    it "shows the time queued users have been waiting" do
+      send_command("totems add foo", as: another_user)
+      send_command("totems add foo")
+      send_command("totems foo")
+      expect(replies.last).to include("waiting for")
+    end
   end
 
   describe "#add" do
@@ -80,10 +93,7 @@ describe Lita::Handlers::Totems, lita: true do
       allow(Time).to receive(:now).and_return(time)
       send_command("totems add foo")
       send_command("totems foo")
-      expect(replies.last).to eq <<-REPLY.chomp
-*** FOO ***
-1. Test User (waiting since #{time})
-REPLY
+      expect(replies.last).to include("Test User")
     end
 
     it "tells the user if they're already queued" do

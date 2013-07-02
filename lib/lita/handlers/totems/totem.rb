@@ -62,6 +62,7 @@ module Lita
           end
 
           redis.zrem("queues:#{name}", user.id)
+          update_holder
           user
         end
 
@@ -74,7 +75,9 @@ module Lita
         end
 
         def yield(user)
-          redis.zrem("queues:#{name}", user.id)
+          result = redis.zrem("queues:#{name}", user.id)
+          update_holder
+          result
         end
 
         private
@@ -92,6 +95,11 @@ module Lita
           ).each_with_index.map do |item, index|
             QueueItem.new(item[0], item[1], index + 1)
           end
+        end
+
+        def update_holder
+          new_holder = holder
+          add(new_holder) if new_holder
         end
       end
     end
