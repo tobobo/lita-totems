@@ -154,7 +154,9 @@ REPLY
         totems
       end
 
-      def notify(target, message)
+      def notify(target_user, body)
+        source = Source.new(target_user)
+        robot.send_message(source, body)
       end
 
       def validate_format(format, totem_must_exist = true)

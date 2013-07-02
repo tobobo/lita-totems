@@ -14,6 +14,7 @@ describe Lita::Handlers::Totems, lita: true do
   before do
     Lita.config.robot.admins = user.id
     Lita::Authorization.add_user_to_group(user, user, "totem_admins")
+    allow(robot).to receive(:send_message)
     send_command("totems create foo")
     send_command("totems create bar")
   end
