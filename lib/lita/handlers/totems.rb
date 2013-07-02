@@ -149,5 +149,7 @@ REPLY
         raise InvalidInvocation
       end
     end
+
+    Lita.register_handler(Totems)
   end
 end
