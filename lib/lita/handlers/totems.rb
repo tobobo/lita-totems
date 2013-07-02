@@ -39,9 +39,13 @@ HELP
         validate_format("Format: #{robot.mention_name} totems add TOTEM_NAME")
 
         if @totem.add(user)
-          reply <<-REPLY.chomp
+          if @totem.holder == user
+            reply "#{user.name} is now in possession of #{@totem}."
+          else
+            reply <<-REPLY.chomp
 #{user.name} has been added to the queue for #{@totem}.
 REPLY
+          end
         else
           reply "#{user.name} is already queued for #{@totem}."
         end

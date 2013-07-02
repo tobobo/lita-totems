@@ -58,10 +58,16 @@ describe Lita::Handlers::Totems, lita: true do
 
   describe "#add" do
     it "replies with a message saying the user was added" do
+      send_command("totems add foo", as: another_user)
       send_command("totems add foo")
       expect(replies.last).to eq(
         "#{user.name} has been added to the queue for FOO."
       )
+    end
+
+    it "tells the user they have the totem if no one else is queued" do
+      send_command("totems add foo")
+      expect(replies.last).to eq("#{user.name} is now in possession of FOO.")
     end
 
     it "replies with the required format if a queue name is missing" do
