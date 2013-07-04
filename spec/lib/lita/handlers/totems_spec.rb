@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Lita::Handlers::Totems, lita: true do
+describe Lita::Handlers::Totems, lita_handler: true do
   it { routes_command("totems add").to(:add) }
   it { routes_command("totems yield").to(:yield) }
   it { routes_command("totems kick").to(:kick) }
