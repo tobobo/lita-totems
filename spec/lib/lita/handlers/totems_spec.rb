@@ -12,6 +12,7 @@ describe Lita::Handlers::Totems, lita_handler: true do
   let(:another_user) { Lita::User.create(2, name: "Another User") }
 
   before do
+    allow(Time).to receive(:now).and_return(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     Lita.config.robot.admins = user.id
     Lita::Authorization.add_user_to_group(user, user, "totem_admins")
     allow(robot).to receive(:send_message)
