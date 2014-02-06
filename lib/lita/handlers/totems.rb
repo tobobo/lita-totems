@@ -170,7 +170,7 @@ REPLY
       end
 
       def notify(target_user, body)
-        source = Source.new(target_user)
+        source = Source.new(user: target_user)
         robot.send_message(source, body)
       end
 
