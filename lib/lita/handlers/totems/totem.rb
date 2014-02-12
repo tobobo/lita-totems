@@ -75,8 +75,9 @@ module Lita
         end
 
         def yield(user)
+          current_holder = holder
           result = redis.zrem("queues:#{name}", user.id)
-          update_holder
+          update_holder unless current_holder == holder
           result
         end
 

@@ -61,10 +61,11 @@ REPLY
           "Format: #{robot.mention_name} totems yield TOTEM_NAME"
         )
 
+        current_holder = @totem.holder
         if @totem.yield(response.user)
           response.reply "#{response.user.name} has yielded #{@totem}."
           holder = @totem.holder
-          notify(holder, "You are now in possession of #{@totem}.") if holder
+          notify(holder, "You are now in possession of #{@totem}.") if holder && holder != current_holder
         else
           response.reply "#{response.user.name} is not queued for #{@totem}."
         end
