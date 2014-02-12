@@ -150,6 +150,13 @@ describe Lita::Handlers::Totems, lita_handler: true do
       send_command("totems yield foo")
     end
 
+    it "does not re-add current holder if the yielder didn't hold the totem" do
+      send_command("totems add foo", as: another_user)
+      expect_any_instance_of(described_class).not_to receive(:notify)
+      expect_any_instance_of(described_class::Totem).not_to receive(:update_holder)
+      send_command("totems yield foo", as: another_user)
+    end
+
     it "does not notify anyone if no one is waiting" do
       expect_any_instance_of(described_class).not_to receive(:notify)
       send_command("totems yield foo")
