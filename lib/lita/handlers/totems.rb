@@ -65,7 +65,7 @@ REPLY
         if @totem.yield(response.user)
           response.reply "#{response.user.name} has yielded #{@totem}."
           holder = @totem.holder
-          notify(holder, "You are now in possession of #{@totem}.") if holder && holder != current_holder
+          notify(holder, "You are now in possession of #{@totem}, yielded by #{response.user.name}.") if holder && holder != current_holder
         else
           response.reply "#{response.user.name} is not queued for #{@totem}."
         end
@@ -89,7 +89,7 @@ REPLY
         response.reply <<-REPLY
 #{kick_user.name} was kicked from the queue for #{@totem}.
 REPLY
-        notify(kick_user, "You've been kicked out of the queue for #{@totem}.")
+        notify(kick_user, "You've been kicked out of the queue for #{@totem} by #{response.user.name}.")
         holder = @totem.holder
         if holder && holder != initial_holder
           notify(holder, "You are now in possession of #{@totem}.")
